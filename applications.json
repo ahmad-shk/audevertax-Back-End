@@ -1,0 +1,48 @@
+[
+  {
+    "id": "a4c6f137-236f-4fb1-aa5e-832b91a86194",
+    "userId": "6baebb3a-0e88-404b-8a48-56b92653a70c",
+    "serviceSlug": "usa-llc",
+    "currentStep": 4,
+    "answers": {
+      "business_activity": "saas",
+      "business_description": "kjs daskdjadasd djas dadjajdad sad ad ad a da dasd",
+      "owner_full_name": "asd",
+      "owner_country": "asd",
+      "owner_date_of_birth": "2000-03-02",
+      "owner_ownership_percentage": 33,
+      "residential_address": "dds",
+      "residential_city": "assd",
+      "residential_state": "asda",
+      "residential_postal_code": "34343",
+      "residential_country": "eae",
+      "preferred_company_name": "erwer",
+      "formation_state": "DE",
+      "company_structure": "single_member",
+      "additional_services": [
+        "ein-without-ssn"
+      ]
+    },
+    "status": "ready_for_payment",
+    "createdAt": "2026-08-24T13:26:33.507Z",
+    "updatedAt": "2026-08-24T13:28:11.661Z",
+    "formationState": "DE"
+  },
+  {
+    "id": "119eb173-99a6-49ea-90a3-018a40802ad7",
+    "userId": "6baebb3a-0e88-404b-8a48-56b92653a70c",
+    "serviceSlug": "usa-llc",
+    "currentStep": 2,
+    "answers": {
+      "business_activity": "saas",
+      "business_description": "asdand asmdnad asmdnandmad dmasndmadn",
+      "owner_full_name": "asdsa",
+      "owner_country": "asdds",
+      "owner_date_of_birth": "2000-03-03",
+      "owner_ownership_percentage": 1
+    },
+    "status": "draft",
+    "createdAt": "2026-08-24T13:30:05.398Z",
+    "updatedAt": "2026-08-24T14:35:12.207Z"
+  }
+]
