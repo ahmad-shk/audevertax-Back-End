@@ -8,6 +8,7 @@ const schema = z.object({
   STORAGE_DRIVER: z.enum(['file', 'postgres']).default('file'),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  DATABASE_URL: z.string().url().optional(),
 });
 
 const result = schema.safeParse(process.env);

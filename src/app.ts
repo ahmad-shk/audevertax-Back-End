@@ -23,7 +23,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 app.get('/', (_req, res) => {
-  res.json({ success: true, data: { name: 'Foremint API', status: 'running' } });
+  res.json({ success: true, data: { name: 'Audevertax API', status: 'running' } });
 });
 
 app.get('/api/v1/health', (_req, res) => {

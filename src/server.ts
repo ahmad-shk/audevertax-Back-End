@@ -1,23 +1,43 @@
 import { app } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
+import { initializeDatabase, closePool } from './core/db.js';
 
 const HOST = '0.0.0.0';
-const PORT = 5001;
+const PORT = env.PORT;
 
-const server = app.listen(PORT, HOST, () => {
-  logger.info({ host: HOST, port: PORT, url: `http://localhost:${PORT}` }, 'Foremint API running');
-});
+async function start() {
+  try {
+    // Initialize database if using Postgres
+    if (env.STORAGE_DRIVER === 'postgres' && env.DATABASE_URL) {
+      logger.info('Initializing Postgres database...');
+      await initializeDatabase();
+      logger.info('Database initialized successfully');
+    }
 
-server.on('error', (error) => {
-  logger.error({ err: error }, 'Foremint API failed to start');
-  process.exitCode = 1;
-});
+    const server = app.listen(PORT, HOST, () => {
+      logger.info({ host: HOST, port: PORT, url: `http://localhost:${PORT}` }, 'Audevertax API running');
+    });
 
-const shutdown = (signal: string) => {
-  logger.info({ signal }, 'Shutting down Foremint API');
-  server.close(() => process.exit(0)); 
-};
+    server.on('error', (error) => {
+      logger.error({ err: error }, 'Audevertax API failed to start');
+      process.exitCode = 1;
+    });
 
-process.once('SIGINT', () => shutdown('SIGINT'));
-process.once('SIGTERM', () => shutdown('SIGTERM')); 
+    const shutdown = async (signal: string) => {
+      logger.info({ signal }, 'Shutting down Audevertax API');
+      server.close(async () => {
+        await closePool();
+        process.exit(0);
+      });
+    };
+
+    process.once('SIGINT', () => shutdown('SIGINT'));
+    process.once('SIGTERM', () => shutdown('SIGTERM'));
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to start server');
+    process.exit(1);
+  }
+}
+
+start(); 
