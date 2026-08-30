@@ -1,8 +1,9 @@
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { JsonStore } from '../../core/json-store.js';
 import type { BillingOrder } from './billing.types.js';
 
-const store = new JsonStore<BillingOrder[]>('billing-orders.json');
+const store = new JsonStore<BillingOrder>(path.resolve('data/billing-orders.json'));
 
 export async function findOrder(applicationId: string, userId: string) {
   const orders = await store.all();
