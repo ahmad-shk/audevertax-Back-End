@@ -11,6 +11,9 @@ export type User = {
   role: UserRole;
   authProvider: AuthProvider;
   googleSubject: string | null;
+  emailVerified: boolean;
+  emailVerificationToken: string | null;
+  emailVerificationExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,4 +25,4 @@ export type Session = {
   createdAt: string;
 };
 
-export type PublicUser = Omit<User, 'passwordHash'>;
+export type PublicUser = Omit<User, 'passwordHash' | 'emailVerificationToken' | 'emailVerificationExpiresAt'>;

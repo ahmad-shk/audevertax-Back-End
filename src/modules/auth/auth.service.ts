@@ -1,13 +1,15 @@
 import bcrypt from 'bcryptjs';
-import { createPublicKey, verify as verifySignature } from 'node:crypto';
+import { createPublicKey, randomUUID, verify as verifySignature } from 'node:crypto';
 import { AppError } from '../../core/errors.js';
 import { env } from '../../config/env.js';
+import { sendVerificationEmail } from '../../utils/mailer.js';
 import { userStore, sessionStore } from './auth.store.js';
 import type { GoogleInput, LoginInput, RegisterInput } from './auth.schemas.js';
 import type { PublicUser, User } from './auth.types.js';
 
 export const SESSION_COOKIE = 'foremint_session';
 const SESSION_DAYS = 7;
+const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const GOOGLE_ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 type GoogleJwk = { kid: string; kty: string; alg: string; n: string; e: string };
 type GooglePayload = { iss?: string; aud?: string; sub?: string; email?: string; email_verified?: boolean; given_name?: string; family_name?: string; exp?: number; iat?: number };
@@ -24,30 +26,109 @@ async function withAccountCreationLock<T>(operation: () => Promise<T>): Promise<
   try { return await operation(); } finally { release(); }
 }
 
-function publicUser(user: User): PublicUser { const { passwordHash: _passwordHash, ...safeUser } = user; return safeUser; }
+function publicUser(user: User): PublicUser {
+  const { passwordHash: _passwordHash, emailVerificationToken: _emailVerificationToken, emailVerificationExpiresAt: _emailVerificationExpiresAt, ...safeUser } = user;
+  return safeUser;
+}
+
 function normalizeEmail(email: string) { return email.trim().toLowerCase(); }
+
+async function dispatchVerificationEmail(email: string, token: string) {
+  const baseUrl = env.FRONTEND_URL || 'http://localhost:3000';
+  const verificationUrl = `${baseUrl.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(token)}`;
+  return sendVerificationEmail(email, verificationUrl);
+}
 
 export async function register(input: RegisterInput) {
   return withAccountCreationLock(async () => {
     const email = normalizeEmail(input.email);
-    if (await userStore.findByEmail(email)) throw new AppError('An account with this email already exists.', 409, 'EMAIL_ALREADY_EXISTS');
-    
-    // Line 39 Fix: argon2.hash ki jagah bcrypt.hash
+    if (await userStore.findByEmail(email)) {
+      throw new AppError('An account with this email already exists.', 409, 'EMAIL_ALREADY_EXISTS');
+    }
+
     const passwordHash = await bcrypt.hash(input.password, 10);
-    
-    const user = await userStore.create({ email, passwordHash, firstName: input.firstName.trim(), lastName: input.lastName.trim(), role: 'customer', authProvider: 'password', googleSubject: null });
-    const session = await createSession(user.id);
-    return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
+    const verificationToken = randomUUID();
+    const user = await userStore.create({
+      email,
+      passwordHash,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      role: 'customer',
+      authProvider: 'password',
+      googleSubject: null,
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpiresAt: new Date(Date.now() + VERIFICATION_TTL_MS).toISOString(),
+    });
+
+    await dispatchVerificationEmail(email, verificationToken);
+    return {
+      user: publicUser(user),
+      verificationRequired: true,
+      verificationToken,
+      expiresAt: user.emailVerificationExpiresAt,
+    };
   });
+}
+
+export async function verifyEmail(token: string) {
+  const user = await userStore.findByVerificationToken(token);
+  if (!user) {
+    throw new AppError('This verification link is invalid or expired.', 400, 'INVALID_VERIFICATION_TOKEN');
+  }
+
+  const expiresAt = user.emailVerificationExpiresAt ? new Date(user.emailVerificationExpiresAt).getTime() : 0;
+  if (expiresAt <= Date.now()) {
+    throw new AppError('This verification link has expired. Please request a new one.', 400, 'VERIFICATION_TOKEN_EXPIRED');
+  }
+
+  const updatedUser = await userStore.update(user.id, {
+    emailVerified: true,
+    emailVerificationToken: null,
+    emailVerificationExpiresAt: null,
+  });
+
+  if (!updatedUser) {
+    throw new AppError('Unable to verify this account.', 500, 'EMAIL_VERIFICATION_FAILED');
+  }
+
+  return { user: publicUser(updatedUser), verified: true };
+}
+
+export async function resendVerificationEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+  const user = await userStore.findByEmail(normalizedEmail);
+  if (!user) {
+    throw new AppError('No account found for this email.', 404, 'USER_NOT_FOUND');
+  }
+
+  if (user.emailVerified) {
+    return { user: publicUser(user), alreadyVerified: true };
+  }
+
+  const verificationToken = randomUUID();
+  const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
+  await userStore.update(user.id, {
+    emailVerificationToken: verificationToken,
+    emailVerificationExpiresAt: expiresAt,
+  });
+
+  await dispatchVerificationEmail(user.email, verificationToken);
+  return { user: publicUser(user), verificationRequired: true, verificationToken, expiresAt };
 }
 
 export async function login(input: LoginInput) {
   const user = await userStore.findByEmail(normalizeEmail(input.email));
-  
-  // Line 48 Fix: argon2.verify ki jagah bcrypt.compare
   const isPasswordValid = user && user.passwordHash ? await bcrypt.compare(input.password, user.passwordHash) : false;
-  
-  if (!user || !user.passwordHash || !isPasswordValid) throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
+
+  if (!user || !user.passwordHash || !isPasswordValid) {
+    throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
+  }
+
+  if (!user.emailVerified) {
+    throw new AppError('Please verify your email before signing in.', 403, 'EMAIL_NOT_VERIFIED');
+  }
+
   const session = await createSession(user.id);
   return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
 }
@@ -62,7 +143,18 @@ export async function loginWithGoogle(input: GoogleInput) {
     if (!user) {
       const existingByEmail = await userStore.findByEmail(email);
       if (existingByEmail) throw new AppError('An account with this email already exists. Sign in with your email and password first.', 409, 'EMAIL_ALREADY_EXISTS');
-      user = await userStore.create({ email, passwordHash: null, firstName: googleUser.given_name?.trim() || 'Google', lastName: googleUser.family_name?.trim() || 'User', role: 'customer', authProvider: 'google', googleSubject: googleUser.sub! });
+      user = await userStore.create({
+        email,
+        passwordHash: null,
+        firstName: googleUser.given_name?.trim() || 'Google',
+        lastName: googleUser.family_name?.trim() || 'User',
+        role: 'customer',
+        authProvider: 'google',
+        googleSubject: googleUser.sub!,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpiresAt: null,
+      });
     }
     const session = await createSession(user.id);
     return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };

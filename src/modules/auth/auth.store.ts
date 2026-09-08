@@ -20,6 +20,10 @@ export const userStore = {
     return (await users.all()).find((user) => user.googleSubject === googleSubject) ?? null;
   },
 
+  async findByVerificationToken(token: string) {
+    return (await users.all()).find((user) => user.emailVerificationToken === token) ?? null;
+  },
+
   async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
     const now = new Date().toISOString();
     return users.insert({ id: randomUUID(), createdAt: now, updatedAt: now, ...data });
