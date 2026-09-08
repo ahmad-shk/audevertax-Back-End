@@ -2,10 +2,11 @@ import type { Request, Response } from 'express';
 import { googleSchema, loginSchema, registerSchema, verifyEmailSchema } from './auth.schemas.js';
 import { getUserFromSession, login, loginWithGoogle, logout, register, resendVerificationEmail, SESSION_COOKIE, verifyEmail } from './auth.service.js';
 
+// Cross-site setup ke liye sameSite: 'none' aur secure: true lazmi hain
 const cookieOptions = {
   httpOnly: true,
-  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'none' as const,
+  secure: true,
   path: '/',
 };
 
@@ -49,21 +50,33 @@ export async function loginUser(req: Request, res: Response) {
   setSessionCookie(res, result.sessionId, result.expiresAt);
   res.json({ success: true, data: { user: result.user } });
 }
+
 export async function googleLoginUser(req: Request, res: Response) {
   const result = await loginWithGoogle(googleSchema.parse(req.body));
   setSessionCookie(res, result.sessionId, result.expiresAt);
   res.json({ success: true, data: { user: result.user } });
 }
+
 export async function currentUser(req: Request, res: Response) {
-  const sessionId = req.cookies[SESSION_COOKIE];
+  const sessionId = req.cookies?.[SESSION_COOKIE];
   const user = sessionId ? await getUserFromSession(sessionId) : null;
-  if (!user) { res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'You are not signed in.' } }); return; }
+  if (!user) {
+    res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'You are not signed in.' } });
+    return;
+  }
   res.json({ success: true, data: { user } });
 }
+
 export async function logoutUser(req: Request, res: Response) {
-  const sessionId = req.cookies[SESSION_COOKIE];
+  const sessionId = req.cookies?.[SESSION_COOKIE];
   if (sessionId) await logout(sessionId);
   res.clearCookie(SESSION_COOKIE, cookieOptions);
   res.json({ success: true, data: { message: 'Signed out successfully.' } });
 }
-function setSessionCookie(res: Response, sessionId: string, expiresAt: string) { res.cookie(SESSION_COOKIE, sessionId, { ...cookieOptions, expires: new Date(expiresAt) }); }
+
+function setSessionCookie(res: Response, sessionId: string, expiresAt: string) {
+  res.cookie(SESSION_COOKIE, sessionId, {
+    ...cookieOptions,
+    expires: new Date(expiresAt),
+  });
+}
