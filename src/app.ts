@@ -18,7 +18,29 @@ export const app = express();
 
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+const allowedOrigins = [
+  'https://talha-website-mu.vercel.app',
+  env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Temporarily allow all for testing if needed
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+  })
+);
+
+// Explicitly handle preflight OPTIONS requests for all routes
+app.options('*', cors());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use(pinoHttp({ logger }));
 app.use(express.json({ limit: '1mb' }));
