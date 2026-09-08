@@ -29,7 +29,14 @@ async function withAccountCreationLock<T>(operation: () => Promise<T>): Promise<
 }
 
 function publicUser(user: User): PublicUser {
-  const { passwordHash: _passwordHash, emailVerificationToken: _emailVerificationToken, emailVerificationExpiresAt: _emailVerificationExpiresAt, ...safeUser } = user;
+  const {
+    passwordHash: _passwordHash,
+    emailVerificationToken: _emailVerificationToken,
+    emailVerificationExpiresAt: _emailVerificationExpiresAt,
+    passwordResetToken: _passwordResetToken,
+    passwordResetExpiresAt: _passwordResetExpiresAt,
+    ...safeUser
+  } = user;
   return safeUser;
 }
 
@@ -160,8 +167,8 @@ export async function forgotPassword(email: string) {
   const resetExpiresAt = new Date(Date.now() + RESET_PASSWORD_TTL_MS).toISOString();
 
   await userStore.update(user.id, {
-    emailVerificationToken: resetToken,
-    emailVerificationExpiresAt: resetExpiresAt,
+    passwordResetToken: resetToken,
+    passwordResetExpiresAt: resetExpiresAt,
   });
 
   const baseUrl = env.FRONTEND_URL || 'http://localhost:3000';
@@ -177,12 +184,13 @@ export async function forgotPassword(email: string) {
 }
 
 export async function resetPassword(token: string, password: string) {
-  const user = await userStore.findByVerificationToken(token);
+  const users = await userStore.all();
+  const user = users.find((entry) => entry.passwordResetToken === token) ?? null;
   if (!user) {
     throw new AppError('This reset link is invalid or expired.', 400, 'INVALID_RESET_TOKEN');
   }
 
-  const expiresAt = user.emailVerificationExpiresAt ? new Date(user.emailVerificationExpiresAt).getTime() : 0;
+  const expiresAt = user.passwordResetExpiresAt ? new Date(user.passwordResetExpiresAt).getTime() : 0;
   if (expiresAt <= Date.now()) {
     throw new AppError('This reset link has expired. Please request a new one.', 400, 'RESET_TOKEN_EXPIRED');
   }
@@ -190,8 +198,8 @@ export async function resetPassword(token: string, password: string) {
   const passwordHash = await bcrypt.hash(password, 10);
   const updatedUser = await userStore.update(user.id, {
     passwordHash,
-    emailVerificationToken: null,
-    emailVerificationExpiresAt: null,
+    passwordResetToken: null,
+    passwordResetExpiresAt: null,
   });
 
   if (!updatedUser) {

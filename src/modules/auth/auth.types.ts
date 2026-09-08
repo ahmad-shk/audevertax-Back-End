@@ -14,6 +14,8 @@ export type User = {
   emailVerified: boolean;
   emailVerificationToken: string | null;
   emailVerificationExpiresAt: string | null;
+  passwordResetToken: string | null;
+  passwordResetExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,4 +27,4 @@ export type Session = {
   createdAt: string;
 };
 
-export type PublicUser = Omit<User, 'passwordHash' | 'emailVerificationToken' | 'emailVerificationExpiresAt'>;
+export type PublicUser = Omit<User, 'passwordHash' | 'emailVerificationToken' | 'emailVerificationExpiresAt' | 'passwordResetToken' | 'passwordResetExpiresAt'>;

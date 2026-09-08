@@ -132,3 +132,32 @@ test('forgot password creates a reset token and resetPassword changes the passwo
   const session = await login({ email, password: 'NewStrongPass456' });
   assert.equal(typeof session.token, 'string');
 });
+
+test('verified users keep permanent profile data and reset flow does not overwrite verification state', async () => {
+  const email = `persistent.user.${Date.now()}@example.com`;
+  await register({
+    email,
+    password: 'StrongPass123',
+    firstName: 'Permanent',
+    lastName: 'User',
+  });
+
+  const verifyEmail = await import('./auth.service.js').then((mod) => mod.verifyEmail);
+  const verificationToken = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email)).then((user) => user?.emailVerificationToken);
+  if (!verificationToken) throw new Error('No verification token generated');
+  await verifyEmail(verificationToken);
+
+  const requested = await forgotPassword(email);
+  const userAfterForgot = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email));
+
+  assert.equal(userAfterForgot?.emailVerified, true);
+  assert.equal(userAfterForgot?.passwordResetToken, requested.resetToken);
+  assert.equal(userAfterForgot?.emailVerificationToken, null);
+
+  await resetPassword(requested.resetToken, 'AnotherStrongPass789');
+  const finalUser = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email));
+
+  assert.equal(finalUser?.emailVerified, true);
+  assert.equal(finalUser?.passwordResetToken, null);
+  assert.equal(finalUser?.passwordResetExpiresAt, null);
+});

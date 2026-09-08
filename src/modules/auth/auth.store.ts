@@ -24,6 +24,10 @@ export const userStore = {
     return (await users.all()).find((user) => user.emailVerificationToken === token) ?? null;
   },
 
+  async all() {
+    return users.all();
+  },
+
   async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
     const now = new Date().toISOString();
     return users.insert({ id: randomUUID(), createdAt: now, updatedAt: now, ...data });
