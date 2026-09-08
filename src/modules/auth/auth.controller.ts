@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { googleSchema, loginSchema, registerSchema, verifyEmailSchema } from './auth.schemas.js';
-import { getUserFromSession, login, loginWithGoogle, logout, register, resendVerificationEmail, SESSION_COOKIE, verifyEmail } from './auth.service.js';
+import { forgotPasswordSchema, googleSchema, loginSchema, registerSchema, resetPasswordSchema, verifyEmailSchema } from './auth.schemas.js';
+import { forgotPassword, getUserFromSession, login, loginWithGoogle, logout, register, resendVerificationEmail, resetPassword, SESSION_COOKIE, verifyEmail } from './auth.service.js';
 
 // Cross-site setup ke liye sameSite: 'none' aur secure: true lazmi hain
 const cookieOptions = {
@@ -29,6 +29,30 @@ export async function verifyEmailUser(req: Request, res: Response) {
     data: {
       user: result.user,
       message: 'Email verified successfully. You can now sign in.',
+    },
+  });
+}
+
+export async function forgotPasswordUser(req: Request, res: Response) {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  const result = await forgotPassword(email);
+  res.json({
+    success: true,
+    data: {
+      ...result,
+      message: result.message,
+    },
+  });
+}
+
+export async function resetPasswordUser(req: Request, res: Response) {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+  const result = await resetPassword(token, password);
+  res.json({
+    success: true,
+    data: {
+      ...result,
+      message: 'Password reset successfully.',
     },
   });
 }

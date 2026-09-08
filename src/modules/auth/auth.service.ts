@@ -11,6 +11,7 @@ export const SESSION_COOKIE = 'foremint_session';
 const SESSION_MINUTES = 15;
 const SESSION_TTL_MS = SESSION_MINUTES * 60 * 1000;
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const RESET_PASSWORD_TTL_MS = 60 * 60 * 1000;
 const GOOGLE_ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 type GoogleJwk = { kid: string; kty: string; alg: string; n: string; e: string };
 type GooglePayload = { iss?: string; aud?: string; sub?: string; email?: string; email_verified?: boolean; given_name?: string; family_name?: string; exp?: number; iat?: number };
@@ -142,6 +143,62 @@ export async function resendVerificationEmail(email: string) {
 
   await dispatchVerificationEmail(user.email, verificationToken);
   return { user: publicUser(user), verificationRequired: true, verificationToken, expiresAt };
+}
+
+export async function forgotPassword(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+  const user = await userStore.findByEmail(normalizedEmail);
+
+  if (!user) {
+    return {
+      resetRequired: false,
+      message: 'If an account exists for this email, a reset link has been sent.',
+    };
+  }
+
+  const resetToken = randomUUID();
+  const resetExpiresAt = new Date(Date.now() + RESET_PASSWORD_TTL_MS).toISOString();
+
+  await userStore.update(user.id, {
+    emailVerificationToken: resetToken,
+    emailVerificationExpiresAt: resetExpiresAt,
+  });
+
+  const baseUrl = env.FRONTEND_URL || 'http://localhost:3000';
+  const resetUrl = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(resetToken)}`;
+  await sendVerificationEmail(user.email, resetUrl);
+
+  return {
+    resetRequired: true,
+    resetToken,
+    expiresAt: resetExpiresAt,
+    message: 'If an account exists for this email, a reset link has been sent.',
+  };
+}
+
+export async function resetPassword(token: string, password: string) {
+  const user = await userStore.findByVerificationToken(token);
+  if (!user) {
+    throw new AppError('This reset link is invalid or expired.', 400, 'INVALID_RESET_TOKEN');
+  }
+
+  const expiresAt = user.emailVerificationExpiresAt ? new Date(user.emailVerificationExpiresAt).getTime() : 0;
+  if (expiresAt <= Date.now()) {
+    throw new AppError('This reset link has expired. Please request a new one.', 400, 'RESET_TOKEN_EXPIRED');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const updatedUser = await userStore.update(user.id, {
+    passwordHash,
+    emailVerificationToken: null,
+    emailVerificationExpiresAt: null,
+  });
+
+  if (!updatedUser) {
+    throw new AppError('Unable to reset the password.', 500, 'PASSWORD_RESET_FAILED');
+  }
+
+  return { reset: true, user: publicUser(updatedUser) };
 }
 
 export async function login(input: LoginInput) {

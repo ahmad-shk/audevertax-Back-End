@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { register, login } from './auth.service.js';
+import { register, login, forgotPassword, resetPassword } from './auth.service.js';
 import { requireAuth } from './auth.middleware.js';
 
 test('register creates a pending user until email is verified', async () => {
@@ -106,4 +106,29 @@ test('requireAuth accepts bearer tokens in addition to cookies', async () => {
 
   assert.equal(nextCalled, true);
   assert.equal(res.locals.user.email, email);
+});
+
+test('forgot password creates a reset token and resetPassword changes the password', async () => {
+  const email = `reset.user.${Date.now()}@example.com`;
+  await register({
+    email,
+    password: 'StrongPass123',
+    firstName: 'Reset',
+    lastName: 'User',
+  });
+
+  const verifyEmail = await import('./auth.service.js').then((mod) => mod.verifyEmail);
+  const verificationToken = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email)).then((user) => user?.emailVerificationToken);
+  if (!verificationToken) throw new Error('No verification token generated');
+  await verifyEmail(verificationToken);
+
+  const requested = await forgotPassword(email);
+  assert.equal(requested.resetRequired, true);
+  assert.equal(typeof requested.resetToken, 'string');
+
+  const updated = await resetPassword(requested.resetToken, 'NewStrongPass456');
+  assert.equal(updated.reset, true);
+
+  const session = await login({ email, password: 'NewStrongPass456' });
+  assert.equal(typeof session.token, 'string');
 });
