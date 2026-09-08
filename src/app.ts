@@ -16,29 +16,34 @@ const helmet = (helmetModule as unknown as { default: (options?: Record<string, 
 
 export const app = express();
 
-// Enable proxy trust for Vercel/reverse proxies so express-rate-limit resolves client IP correctly
 app.set('trust proxy', 1);
 
 app.disable('x-powered-by');
 app.use(helmet());
 
 const allowedOrigins = [
+  'https://talha-website-26u2.vercel.app',
   'https://talha-website-mu.vercel.app',
+  'https://audvertax-front-end.vercel.app',
   env.FRONTEND_URL,
 ].filter(Boolean);
 
-// CORS middleware handles all routes and OPTIONS preflight automatically
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+      // Allow non-browser requests (Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        // Return EXACT origin string (Boolean true pass karne se credentials fail hote hain)
+        callback(null, origin);
       } else {
-        callback(null, true);
+        // Dynamic origins handling
+        callback(null, origin);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
     credentials: true,
   })
 );
@@ -70,7 +75,6 @@ app.use('/api/v1/users', userRouter);
 app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/billing', billingRoutes);
 
-// Catch-all for 404 (without path string to avoid path-to-regexp issues)
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Route not found' } });
 });
