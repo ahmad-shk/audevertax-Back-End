@@ -8,7 +8,8 @@ import type { GoogleInput, LoginInput, RegisterInput } from './auth.schemas.js';
 import type { PublicUser, User } from './auth.types.js';
 
 export const SESSION_COOKIE = 'foremint_session';
-const SESSION_DAYS = 7;
+const SESSION_MINUTES = 15;
+const SESSION_TTL_MS = SESSION_MINUTES * 60 * 1000;
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const GOOGLE_ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 type GoogleJwk = { kid: string; kty: string; alg: string; n: string; e: string };
@@ -156,7 +157,13 @@ export async function login(input: LoginInput) {
   }
 
   const session = await createSession(user.id);
-  return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
+  return {
+    user: publicUser(user),
+    sessionId: session.id,
+    token: session.id,
+    expiresAt: session.expiresAt,
+    expiresInMs: SESSION_TTL_MS,
+  };
 }
 
 export async function loginWithGoogle(input: GoogleInput) {
@@ -183,7 +190,13 @@ export async function loginWithGoogle(input: GoogleInput) {
       });
     }
     const session = await createSession(user.id);
-    return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
+    return {
+      user: publicUser(user),
+      sessionId: session.id,
+      token: session.id,
+      expiresAt: session.expiresAt,
+      expiresInMs: SESSION_TTL_MS,
+    };
   });
 }
 
@@ -226,4 +239,7 @@ export async function getUserFromSession(sessionId: string) {
 }
 
 export async function logout(sessionId: string) { await sessionStore.delete(sessionId); }
-async function createSession(userId: string) { const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString(); return sessionStore.create(userId, expiresAt); }
+async function createSession(userId: string) {
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  return sessionStore.create(userId, expiresAt);
+}

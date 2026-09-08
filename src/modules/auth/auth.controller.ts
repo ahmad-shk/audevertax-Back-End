@@ -48,13 +48,33 @@ export async function resendVerificationEmailUser(req: Request, res: Response) {
 export async function loginUser(req: Request, res: Response) {
   const result = await login(loginSchema.parse(req.body));
   setSessionCookie(res, result.sessionId, result.expiresAt);
-  res.json({ success: true, data: { user: result.user } });
+  res.json({
+    success: true,
+    data: {
+      user: result.user,
+      token: result.token,
+      sessionId: result.sessionId,
+      expiresAt: result.expiresAt,
+      expiresInMs: result.expiresInMs,
+      message: 'Signed in successfully.',
+    },
+  });
 }
 
 export async function googleLoginUser(req: Request, res: Response) {
   const result = await loginWithGoogle(googleSchema.parse(req.body));
   setSessionCookie(res, result.sessionId, result.expiresAt);
-  res.json({ success: true, data: { user: result.user } });
+  res.json({
+    success: true,
+    data: {
+      user: result.user,
+      token: result.token,
+      sessionId: result.sessionId,
+      expiresAt: result.expiresAt,
+      expiresInMs: result.expiresInMs,
+      message: 'Signed in successfully.',
+    },
+  });
 }
 
 export async function currentUser(req: Request, res: Response) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { register } from './auth.service.js';
+import { register, login } from './auth.service.js';
 
 test('register creates a pending user until email is verified', async () => {
   const email = `pending.user.${Date.now()}@example.com`;
@@ -38,4 +38,30 @@ test('register allows re-signup when a previous user is still unverified', async
   assert.equal(second.verificationRequired, true);
   assert.notEqual(first.verificationToken, second.verificationToken);
   assert.equal(first.user.id, second.user.id);
+});
+
+test('login creates a 15 minute session token', async () => {
+  const email = `session.user.${Date.now()}@example.com`;
+  await register({
+    email,
+    password: 'StrongPass123',
+    firstName: 'Session',
+    lastName: 'User',
+  });
+
+  const verifiedUser = await import('./auth.service.js').then((mod) => mod.verifyEmail);
+  const verificationToken = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email)).then((user) => user?.emailVerificationToken);
+  if (!verificationToken) throw new Error('No verification token generated');
+  await verifiedUser(verificationToken);
+
+  const session = await login({ email, password: 'StrongPass123' });
+
+  const expiresAtMs = new Date(session.expiresAt).getTime();
+  const nowMs = Date.now();
+  const delta = expiresAtMs - nowMs;
+
+  assert.ok(delta > 14 * 60 * 1000, 'session should last at least 14 minutes');
+  assert.ok(delta <= 15 * 60 * 1000 + 1000, 'session should not exceed 15 minutes');
+  assert.equal(typeof session.token, 'string');
+  assert.equal(session.token, session.sessionId);
 });
