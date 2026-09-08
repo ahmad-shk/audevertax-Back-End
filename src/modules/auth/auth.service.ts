@@ -42,24 +42,50 @@ async function dispatchVerificationEmail(email: string, token: string) {
 export async function register(input: RegisterInput) {
   return withAccountCreationLock(async () => {
     const email = normalizeEmail(input.email);
-    if (await userStore.findByEmail(email)) {
+    const existingUser = await userStore.findByEmail(email);
+
+    if (existingUser && existingUser.emailVerified) {
       throw new AppError('An account with this email already exists.', 409, 'EMAIL_ALREADY_EXISTS');
     }
 
     const passwordHash = await bcrypt.hash(input.password, 10);
     const verificationToken = randomUUID();
-    const user = await userStore.create({
-      email,
-      passwordHash,
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
-      role: 'customer',
-      authProvider: 'password',
-      googleSubject: null,
-      emailVerified: false,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpiresAt: new Date(Date.now() + VERIFICATION_TTL_MS).toISOString(),
-    });
+    const verificationExpiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
+
+    let user: User;
+    if (existingUser && !existingUser.emailVerified) {
+      const updatedUser = await userStore.update(existingUser.id, {
+        email,
+        passwordHash,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        role: 'customer',
+        authProvider: 'password',
+        googleSubject: null,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpiresAt: verificationExpiresAt,
+      });
+
+      if (!updatedUser) {
+        throw new AppError('Unable to update the previous unverified account.', 500, 'EMAIL_REGISTRATION_FAILED');
+      }
+
+      user = updatedUser;
+    } else {
+      user = await userStore.create({
+        email,
+        passwordHash,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        role: 'customer',
+        authProvider: 'password',
+        googleSubject: null,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpiresAt: verificationExpiresAt,
+      });
+    }
 
     await dispatchVerificationEmail(email, verificationToken);
     return {

@@ -20,20 +20,26 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
     auth: { user: smtpUser, pass: smtpPass },
   });
 
-  await transporter.sendMail({
-    from: smtpFrom,
-    to: email,
-    subject: 'Verify your Audevertax account',
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Verify your email</h2>
-        <p>Thank you for registering.</p>
-        <p>Click the link below to verify your email and continue:</p>
-        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-        <p>If you did not create this account, you can ignore this email.</p>
-      </div>
-    `,
-  });
+  try {
+    await transporter.sendMail({
+      from: smtpFrom,
+      to: email,
+      subject: 'Verify your Audevertax account',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Verify your email</h2>
+          <p>Thank you for registering.</p>
+          <p>Click the link below to verify your email and continue:</p>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>If you did not create this account, you can ignore this email.</p>
+        </div>
+      `,
+    });
 
-  return { delivered: true, provider: 'smtp' };
+    return { delivered: true, provider: 'smtp' };
+  } catch (error) {
+    console.warn('[EMAIL] SMTP send failed, falling back to console:', error);
+    console.info(`[EMAIL] Verify account for ${email}: ${verificationUrl}`);
+    return { delivered: false, provider: 'console' };
+  }
 }

@@ -32,6 +32,10 @@ export const userStore = {
   async update(id: string, changes: Partial<User>) {
     return users.update(id, { ...changes, updatedAt: new Date().toISOString() });
   },
+
+  async delete(id: string) {
+    return users.delete(id);
+  },
 };
 
 export const sessionStore = {
