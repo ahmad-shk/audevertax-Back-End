@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { register, login } from './auth.service.js';
+import { requireAuth } from './auth.middleware.js';
 
 test('register creates a pending user until email is verified', async () => {
   const email = `pending.user.${Date.now()}@example.com`;
@@ -64,4 +65,45 @@ test('login creates a 15 minute session token', async () => {
   assert.ok(delta <= 15 * 60 * 1000 + 1000, 'session should not exceed 15 minutes');
   assert.equal(typeof session.token, 'string');
   assert.equal(session.token, session.sessionId);
+});
+
+test('requireAuth accepts bearer tokens in addition to cookies', async () => {
+  const email = `bearer.user.${Date.now()}@example.com`;
+  await register({
+    email,
+    password: 'StrongPass123',
+    firstName: 'Bearer',
+    lastName: 'User',
+  });
+
+  const verifyEmail = await import('./auth.service.js').then((mod) => mod.verifyEmail);
+  const verificationToken = await import('./auth.store.js').then((mod) => mod.userStore.findByEmail(email)).then((user) => user?.emailVerificationToken);
+  if (!verificationToken) throw new Error('No verification token generated');
+  await verifyEmail(verificationToken);
+
+  const session = await login({ email, password: 'StrongPass123' });
+
+  let nextCalled = false;
+  const req: any = {
+    cookies: {},
+    headers: { authorization: `Bearer ${session.sessionId}` },
+  };
+  const res: any = {
+    locals: {},
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.payload = payload;
+      return this;
+    },
+  };
+
+  await requireAuth(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(res.locals.user.email, email);
 });

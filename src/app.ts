@@ -43,7 +43,16 @@ app.use(
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Cookie',
+      'x-document-owner-id',
+      'x-document-owner-type',
+      'x-document-type',
+      'x-file-name',
+    ],
     credentials: true,
   })
 );
