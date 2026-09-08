@@ -18,19 +18,20 @@ export const app = express();
 
 app.disable('x-powered-by');
 app.use(helmet());
+
 const allowedOrigins = [
   'https://talha-website-mu.vercel.app',
   env.FRONTEND_URL,
 ].filter(Boolean);
 
+// CORS middleware handles all routes and OPTIONS preflight automatically
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Temporarily allow all for testing if needed
+        callback(null, true);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -39,8 +40,6 @@ app.use(
   })
 );
 
-// Explicitly handle preflight OPTIONS requests for all routes
-app.options('*', cors());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use(pinoHttp({ logger }));
 app.use(express.json({ limit: '1mb' }));
@@ -59,6 +58,7 @@ app.use('/api/v1/users', userRouter);
 app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/billing', billingRoutes);
 
+// Catch-all for 404 (without path string to avoid path-to-regexp issues)
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Route not found' } });
 });

@@ -2,10 +2,10 @@ import { app } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 
-// Local development ke liye (Vercel par app.listen execute nahi hoga)
-if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
+// Vercel par process.env.VERCEL '1' hota hai
+if (process.env.VERCEL !== '1') {
   const HOST = '0.0.0.0';
-  const PORT = 5001;
+  const PORT = Number(env.PORT) || 5001;
 
   const server = app.listen(PORT, HOST, () => {
     logger.info({ host: HOST, port: PORT, url: `http://localhost:${PORT}` }, 'Foremint API running');
@@ -25,5 +25,4 @@ if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
   process.once('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-// Vercel Serverless Function ke liye default export
 export default app;

@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import bcrypt from 'bcryptjs';
 import { createPublicKey, verify as verifySignature } from 'node:crypto';
 import { AppError } from '../../core/errors.js';
 import { env } from '../../config/env.js';
@@ -15,11 +15,6 @@ type GoogleKeySet = { keys: GoogleJwk[] };
 let googleKeys: GoogleKeySet | null = null;
 let googleKeysExpiresAt = 0;
 
-// The current local JSON store has no transaction/unique-constraint support.
-// Serialize account creation in this process so concurrent requests cannot
-// both pass the email uniqueness check before either writes the user file.
-// The future database implementation must enforce the same invariant with a
-// database UNIQUE constraint/transaction.
 let accountCreationQueue: Promise<void> = Promise.resolve();
 async function withAccountCreationLock<T>(operation: () => Promise<T>): Promise<T> {
   const previous = accountCreationQueue;
@@ -36,7 +31,10 @@ export async function register(input: RegisterInput) {
   return withAccountCreationLock(async () => {
     const email = normalizeEmail(input.email);
     if (await userStore.findByEmail(email)) throw new AppError('An account with this email already exists.', 409, 'EMAIL_ALREADY_EXISTS');
-    const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
+    
+    // Line 39 Fix: argon2.hash ki jagah bcrypt.hash
+    const passwordHash = await bcrypt.hash(input.password, 10);
+    
     const user = await userStore.create({ email, passwordHash, firstName: input.firstName.trim(), lastName: input.lastName.trim(), role: 'customer', authProvider: 'password', googleSubject: null });
     const session = await createSession(user.id);
     return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
@@ -45,7 +43,11 @@ export async function register(input: RegisterInput) {
 
 export async function login(input: LoginInput) {
   const user = await userStore.findByEmail(normalizeEmail(input.email));
-  if (!user || !user.passwordHash || !(await argon2.verify(user.passwordHash, input.password))) throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
+  
+  // Line 48 Fix: argon2.verify ki jagah bcrypt.compare
+  const isPasswordValid = user && user.passwordHash ? await bcrypt.compare(input.password, user.passwordHash) : false;
+  
+  if (!user || !user.passwordHash || !isPasswordValid) throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
   const session = await createSession(user.id);
   return { user: publicUser(user), sessionId: session.id, expiresAt: session.expiresAt };
 }
@@ -104,5 +106,6 @@ export async function getUserFromSession(sessionId: string) {
   const user = await userStore.findById(session.userId);
   return user ? publicUser(user) : null;
 }
+
 export async function logout(sessionId: string) { await sessionStore.delete(sessionId); }
 async function createSession(userId: string) { const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString(); return sessionStore.create(userId, expiresAt); }
