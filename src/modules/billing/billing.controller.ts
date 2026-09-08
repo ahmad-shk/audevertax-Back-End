@@ -15,7 +15,7 @@ export async function getBillingController(req: Request, res: Response) {
     return res.status(400).json({ success: false, error: { code: 'INVALID_APPLICATION_ID', message: 'Application ID is required.' } });
   }
 
-  const billing = await getBilling(id, applicationId);
+  const billing = await getBilling(id, String(applicationId));
   if (!billing) {
     return res.status(404).json({ success: false, error: { code: 'BILLING_NOT_FOUND', message: 'Billing information is not available for this application.' } });
   }
@@ -32,7 +32,7 @@ export async function createOrderController(req: Request, res: Response) {
     return res.status(400).json({ success: false, error: { code: 'INVALID_APPLICATION_ID', message: 'Application ID is required.' } });
   }
 
-  const order = await createBillingOrder(id, applicationId);
+  const order = await createBillingOrder(id, String(applicationId));
   if (!order) return res.status(409).json({ success: false, error: { code: 'ORDER_UNAVAILABLE', message: 'This application is not ready for payment.' } });
   return res.status(201).json({ success: true, data: order });
 }
@@ -46,13 +46,13 @@ export async function payController(req: Request, res: Response) {
     return res.status(400).json({ success: false, error: { code: 'INVALID_APPLICATION_ID', message: 'Application ID is required.' } });
   }
 
-  const existing = await getBilling(id, applicationId);
+  const existing = await getBilling(id,  String(applicationId));
   if (existing?.status === 'paid') {
     return res.status(409).json({ success: false, error: { code: 'ALREADY_PAID', message: 'This application has already been paid.' } });
   }
 
   try {
-    const order = await markPaymentPaid(id, applicationId);
+    const order = await markPaymentPaid(id, String(applicationId));
     if (!order) return res.status(409).json({ success: false, error: { code: 'PAYMENT_UNAVAILABLE', message: 'This application is not ready for payment or no pending billing order exists.' } });
     return res.json({ success: true, data: order });
   } catch (error) {

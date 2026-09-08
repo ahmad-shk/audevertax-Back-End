@@ -6,7 +6,7 @@ import { userStore, sessionStore } from './auth.store.js';
 import type { GoogleInput, LoginInput, RegisterInput } from './auth.schemas.js';
 import type { PublicUser, User } from './auth.types.js';
 
-export const SESSION_COOKIE = 'audevertax_session';
+export const SESSION_COOKIE = 'foremint_session';
 const SESSION_DAYS = 7;
 const GOOGLE_ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 type GoogleJwk = { kid: string; kty: string; alg: string; n: string; e: string };

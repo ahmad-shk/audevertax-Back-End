@@ -4,6 +4,14 @@ import { AppError } from '../core/errors.js';
 import { logger } from '../utils/logger.js';
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (error?.type === 'entity.too.large' || error?.status === 413) {
+    res.status(413).json({
+      success: false,
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'Documents must be 10 MB or smaller.' },
+    });
+    return;
+  }
+
   if (error instanceof ZodError) {
     res.status(400).json({
       success: false,

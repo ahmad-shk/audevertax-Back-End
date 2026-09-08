@@ -1,0 +1,31 @@
+[
+  {
+    "applicationId": "45037d2b-bbc9-4689-b412-f081cf6ad777",
+    "userId": "fec57e16-b5a3-4584-9240-3defa4d7d5f6",
+    "lineItems": [
+      {
+        "key": "package:basic",
+        "label": "Basic",
+        "quantity": 1,
+        "unitAmount": 125,
+        "total": 125,
+        "currency": "USD"
+      },
+      {
+        "key": "state-filing:texas",
+        "label": "Texas filing fee",
+        "quantity": 1,
+        "unitAmount": 300,
+        "total": 300,
+        "currency": "USD"
+      }
+    ],
+    "subtotal": 425,
+    "total": 425,
+    "currency": "USD",
+    "status": "paid",
+    "id": "a9601e42-5c10-4640-bbe4-62b05fc3d017",
+    "createdAt": "2026-09-06T16:04:40.459Z",
+    "updatedAt": "2026-09-06T16:04:40.537Z"
+  }
+]

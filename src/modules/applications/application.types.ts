@@ -1,40 +1,7 @@
-export const APPLICATION_STATUSES = [
-  'draft',
-  'in_review',
-  'ready_for_payment',
-  'paid',
-  'processing',
-  'completed',
-  'cancelled',
-] as const;
-
+export const APPLICATION_STATUSES = ['draft', 'in_review', 'ready_for_payment', 'paid', 'processing', 'completed', 'cancelled'] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
-
-export interface Application {
-  id: string;
-  userId: string;
-  serviceSlug: string;
-  packageSlug?: string;
-  formationState?: string;
-  currentStep: number;
-  answers: Record<string, unknown>;
-  status: ApplicationStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateApplicationInput {
-  serviceSlug: string;
-  packageSlug?: string;
-  formationState?: string;
-  currentStep?: number;
-  answers?: Record<string, unknown>;
-}
-
-export interface UpdateApplicationInput {
-  packageSlug?: string;
-  formationState?: string;
-  currentStep?: number;
-  answers?: Record<string, unknown>;
-  status?: ApplicationStatus;
-}
+export interface ApplicationMember { id: string; fullName: string; country?: string; dateOfBirth?: string; ownershipPercentage?: number; address?: string; }
+export interface ApplicationDocumentReference { id: string; documentType: string; ownerType: 'application' | 'member'; ownerId?: string; fileName: string; storageKey: string; status: 'uploaded' | 'requested' | 'approved' | 'rejected'; createdAt: string; updatedAt: string; }
+export interface Application { id: string; userId: string; serviceSlug: string; packageSlug?: string; formationState?: string; variantSlug?: string; addOnSlugs: string[]; members: ApplicationMember[]; documents: ApplicationDocumentReference[]; currentStep: number; answers: Record<string, unknown>; status: ApplicationStatus; createdAt: string; updatedAt: string; }
+export interface CreateApplicationInput { serviceSlug: string; packageSlug?: string; formationState?: string; variantSlug?: string; addOnSlugs?: string[]; members?: ApplicationMember[]; documents?: ApplicationDocumentReference[]; currentStep?: number; answers?: Record<string, unknown>; }
+export interface UpdateApplicationInput { packageSlug?: string; formationState?: string; variantSlug?: string; addOnSlugs?: string[]; members?: ApplicationMember[]; documents?: ApplicationDocumentReference[]; currentStep?: number; answers?: Record<string, unknown>; status?: ApplicationStatus; }

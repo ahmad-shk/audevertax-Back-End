@@ -1,8 +1,7 @@
-import path from 'node:path';
 import { JsonStore } from '../../core/json-store.js';
 import type { Application } from './application.types.js';
 
-const store = new JsonStore<Application>(path.resolve('data/applications.json'));
+const store = new JsonStore<Application>('applications.json');
 
 export const applicationStore = {
   async listByUser(userId: string) {

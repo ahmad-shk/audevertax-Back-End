@@ -3,8 +3,10 @@ export type BillingStatus = 'pending' | 'paid';
 export type BillingLineItem = {
   key: string;
   label: string;
-  amount: number;
-  currency: string;
+  quantity: number;
+  unitAmount: number;
+  total: number;
+  currency: 'USD' | 'GBP';
 };
 
 export type BillingOrder = {
@@ -14,7 +16,7 @@ export type BillingOrder = {
   lineItems: BillingLineItem[];
   subtotal: number;
   total: number;
-  currency: string;
+  currency: 'USD' | 'GBP';
   status: BillingStatus;
   createdAt: string;
   updatedAt: string;

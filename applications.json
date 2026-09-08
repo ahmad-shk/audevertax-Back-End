@@ -1,48 +1,105 @@
 [
   {
-    "id": "a4c6f137-236f-4fb1-aa5e-832b91a86194",
-    "userId": "6baebb3a-0e88-404b-8a48-56b92653a70c",
+    "id": "45037d2b-bbc9-4689-b412-f081cf6ad777",
+    "userId": "fec57e16-b5a3-4584-9240-3defa4d7d5f6",
     "serviceSlug": "usa-llc",
-    "currentStep": 4,
+    "packageSlug": "basic",
+    "formationState": "texas",
+    "addOnSlugs": [],
+    "members": [
+      {
+        "id": "3a53e6d3-7bff-4402-8559-4273904d5e75",
+        "fullName": "asdasd",
+        "country": "ewr",
+        "dateOfBirth": "2000-02-02",
+        "ownershipPercentage": 50,
+        "address": "werwe"
+      },
+      {
+        "id": "7c413c6b-6c5c-4981-a080-b7df7f4fe23d",
+        "fullName": "asd",
+        "country": "asd",
+        "dateOfBirth": "2000-02-02",
+        "ownershipPercentage": 50,
+        "address": "asd sa d as dsa as  dsa asd"
+      }
+    ],
+    "documents": [
+      {
+        "id": "2ab9a585-96ad-48df-b1df-8c7ea6b0fb5a",
+        "documentType": "member-identity",
+        "ownerType": "member",
+        "ownerId": "3a53e6d3-7bff-4402-8559-4273904d5e75",
+        "fileName": "WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "storageKey": "45037d2b-bbc9-4689-b412-f081cf6ad777/2ab9a585-96ad-48df-b1df-8c7ea6b0fb5a-WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "status": "uploaded",
+        "createdAt": "2026-09-06T15:57:12.323Z",
+        "updatedAt": "2026-09-06T15:57:12.323Z"
+      },
+      {
+        "id": "523e7da3-a48d-4eac-830b-c98d6feb85d9",
+        "documentType": "member-address-proof",
+        "ownerType": "member",
+        "ownerId": "3a53e6d3-7bff-4402-8559-4273904d5e75",
+        "fileName": "WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "storageKey": "45037d2b-bbc9-4689-b412-f081cf6ad777/523e7da3-a48d-4eac-830b-c98d6feb85d9-WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "status": "uploaded",
+        "createdAt": "2026-09-06T15:57:17.591Z",
+        "updatedAt": "2026-09-06T15:57:17.591Z"
+      },
+      {
+        "id": "9344e2f6-92ba-4a96-b6a9-3d5b4b19607d",
+        "documentType": "member-identity",
+        "ownerType": "member",
+        "ownerId": "7c413c6b-6c5c-4981-a080-b7df7f4fe23d",
+        "fileName": "WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "storageKey": "45037d2b-bbc9-4689-b412-f081cf6ad777/9344e2f6-92ba-4a96-b6a9-3d5b4b19607d-WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "status": "uploaded",
+        "createdAt": "2026-09-06T15:57:22.649Z",
+        "updatedAt": "2026-09-06T15:57:22.649Z"
+      },
+      {
+        "id": "e852a517-2f3b-4c63-9146-db96ccf67193",
+        "documentType": "member-address-proof",
+        "ownerType": "member",
+        "ownerId": "7c413c6b-6c5c-4981-a080-b7df7f4fe23d",
+        "fileName": "WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "storageKey": "45037d2b-bbc9-4689-b412-f081cf6ad777/e852a517-2f3b-4c63-9146-db96ccf67193-WhatsApp_Image_2026-09-02_at_11.49.45_AM__1_.jpeg",
+        "status": "uploaded",
+        "createdAt": "2026-09-06T15:57:26.849Z",
+        "updatedAt": "2026-09-06T15:57:26.849Z"
+      }
+    ],
+    "currentStep": 6,
     "answers": {
-      "business_activity": "saas",
-      "business_description": "kjs daskdjadasd djas dadjajdad sad ad ad a da dasd",
-      "owner_full_name": "asd",
-      "owner_country": "asd",
-      "owner_date_of_birth": "2000-03-02",
-      "owner_ownership_percentage": 33,
-      "residential_address": "dds",
-      "residential_city": "assd",
-      "residential_state": "asda",
-      "residential_postal_code": "34343",
-      "residential_country": "eae",
-      "preferred_company_name": "erwer",
-      "formation_state": "DE",
-      "company_structure": "single_member",
-      "additional_services": [
-        "ein-without-ssn"
+      "business_name": "sdasd",
+      "business_activity": "consulting",
+      "business_description": "as d sad sad sa das d dsa ads",
+      "email": "justinasingle6@gmail.com",
+      "phone": "234234",
+      "whatsapp": "234234",
+      "company_type": "multi_member_llc",
+      "owner_full_name": "asdasd",
+      "owner_country": "ewr",
+      "owner_date_of_birth": "2000-02-02",
+      "residential_address": "werwe",
+      "residential_city": "rew",
+      "residential_state": "wer",
+      "residential_postal_code": "243",
+      "residential_country": "wer",
+      "owner_ownership_percentage": 50,
+      "members": [
+        {
+          "full_name": "asd",
+          "ownership_percentage": 50,
+          "country": "asd",
+          "date_of_birth": "2000-02-02",
+          "address": "asd sa d as dsa as  dsa asd"
+        }
       ]
     },
-    "status": "ready_for_payment",
-    "createdAt": "2026-08-24T13:26:33.507Z",
-    "updatedAt": "2026-08-24T13:28:11.661Z",
-    "formationState": "DE"
-  },
-  {
-    "id": "119eb173-99a6-49ea-90a3-018a40802ad7",
-    "userId": "6baebb3a-0e88-404b-8a48-56b92653a70c",
-    "serviceSlug": "usa-llc",
-    "currentStep": 2,
-    "answers": {
-      "business_activity": "saas",
-      "business_description": "asdand asmdnad asmdnandmad dmasndmadn",
-      "owner_full_name": "asdsa",
-      "owner_country": "asdds",
-      "owner_date_of_birth": "2000-03-03",
-      "owner_ownership_percentage": 1
-    },
-    "status": "draft",
-    "createdAt": "2026-08-24T13:30:05.398Z",
-    "updatedAt": "2026-08-24T14:35:12.207Z"
+    "status": "paid",
+    "createdAt": "2026-09-06T15:54:19.864Z",
+    "updatedAt": "2026-09-06T16:04:40.544Z"
   }
 ]

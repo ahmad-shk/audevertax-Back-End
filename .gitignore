@@ -4,5 +4,4 @@ dist/
 .env.*
 !.env.example
 data/*.json
-
-.vercel
+data/documents/
