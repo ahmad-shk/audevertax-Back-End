@@ -2,11 +2,21 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 export class JsonStore<T extends { id: string }> {
-  constructor(private readonly filePath: string) {}
+  private readonly resolvePath: string;
+
+  constructor(filePath: string) {
+    // Vercel serverless functions write operations ke liye sirf `/tmp` allowed karti hain
+    if (process.env.VERCEL === '1') {
+      const fileName = path.basename(filePath);
+      this.resolvePath = path.join('/tmp', fileName);
+    } else {
+      this.resolvePath = filePath;
+    }
+  }
 
   private async read(): Promise<T[]> {
     try {
-      return JSON.parse(await fs.readFile(this.filePath, 'utf8')) as T[];
+      return JSON.parse(await fs.readFile(this.resolvePath, 'utf8')) as T[];
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       await this.write([]);
@@ -15,8 +25,8 @@ export class JsonStore<T extends { id: string }> {
   }
 
   private async write(items: T[]): Promise<void> {
-    await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-    await fs.writeFile(this.filePath, JSON.stringify(items, null, 2));
+    await fs.mkdir(path.dirname(this.resolvePath), { recursive: true });
+    await fs.writeFile(this.resolvePath, JSON.stringify(items, null, 2));
   }
 
   async all(): Promise<T[]> {
