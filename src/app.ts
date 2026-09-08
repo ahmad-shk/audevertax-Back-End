@@ -16,6 +16,9 @@ const helmet = (helmetModule as unknown as { default: (options?: Record<string, 
 
 export const app = express();
 
+// Enable proxy trust for Vercel/reverse proxies so express-rate-limit resolves client IP correctly
+app.set('trust proxy', 1);
+
 app.disable('x-powered-by');
 app.use(helmet());
 
@@ -40,7 +43,16 @@ app.use(
   })
 );
 
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false }));
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 300,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
+  })
+);
+
 app.use(pinoHttp({ logger }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
